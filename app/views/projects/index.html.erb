@@ -1,0 +1,38 @@
+<% content_for :title, "LaunchPad — Projects" %>
+
+<div class="vibe-floor"></div>
+<div class="vibe-floor-fade"></div>
+
+<div style="position:relative; z-index:1;">
+  <div style="text-align:center; margin-bottom: 36px;">
+    <div style="font-size: 40px;">🎷✨🦄</div>
+    <h1 class="rainbow-text" style="font-family: var(--font-display); font-size: 34px; font-weight: 900; margin: 10px 0 6px;">LAUNCHPAD</h1>
+    <p style="color: var(--ink-dim); font-size: 13px; margin: 0;">Your own private, neon-drenched events dashboard.</p>
+  </div>
+
+  <div class="card" style="margin-bottom: 28px;">
+    <h2 style="font-family: var(--font-display); font-size: 15px; margin: 0 0 14px; color: var(--cyan);">Create a project</h2>
+    <%= form_with url: projects_path, method: :post, local: true do |f| %>
+      <div class="field">
+        <label for="project_name">Project name</label>
+        <%= f.text_field :name, id: "project_name", placeholder: "My App", required: true %>
+      </div>
+      <%= f.submit "Create project", class: "btn" %>
+    <% end %>
+  </div>
+
+  <% if @projects.any? %>
+    <h2 style="font-family: var(--font-display); font-size: 15px; color: var(--ink-dim); margin-bottom: 12px;">Your projects</h2>
+    <% @projects.each do |project| %>
+      <div class="home-project-card">
+        <div>
+          <div style="font-weight: 700; color: #fff; font-size: 15px;"><%= project.name %></div>
+          <div style="color: var(--ink-dimmer); font-size: 11px;">created <%= time_ago_in_words(project.created_at) %> ago · <%= project.events.count %> events</div>
+        </div>
+        <%= link_to "Open feed →", feed_project_path(project), class: "btn" %>
+      </div>
+    <% end %>
+  <% else %>
+    <p style="text-align:center; color: var(--ink-dimmer); font-size: 13px;">No projects yet — create one above to get your API key.</p>
+  <% end %>
+</div>

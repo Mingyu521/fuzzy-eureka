@@ -1,0 +1,19 @@
+# Points every environment at DATABASE_URL, which should be your Supabase
+# Postgres connection string (Settings -> Database -> Connection string).
+# Locally, set it in .env (see .env.example). In production, set it as a
+# real environment variable on whatever host runs the app.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  url: <%= ENV.fetch("DATABASE_URL") { "postgresql://localhost/events_dashboard_development" } %>
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+  url: <%= ENV.fetch("TEST_DATABASE_URL") { ENV.fetch("DATABASE_URL") { "postgresql://localhost/events_dashboard_test" } } %>
+
+production:
+  <<: *default

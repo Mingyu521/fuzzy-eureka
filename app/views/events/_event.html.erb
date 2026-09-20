@@ -1,0 +1,28 @@
+<% color = channel_color(event.channel) %>
+<div id="<%= dom_id(event) %>" class="event-row <%= 'event-row--notify' if event.notify %>"
+     data-notify="<%= event.notify? %>" data-notify-title="<%= event.title %>" data-notify-body="<%= event.description %>">
+  <span class="event-icon"><%= event.icon.presence || "🔔" %></span>
+  <div class="event-body">
+    <div class="event-title-row">
+      <span class="event-title">
+        <% if event.url.present? %>
+          <%= link_to event.title, event.url, target: "_blank", rel: "noopener" %>
+        <% else %>
+          <%= event.title %>
+        <% end %>
+      </span>
+      <span class="channel-badge" style="color: <%= color %>;"><%= event.channel %></span>
+      <% if event.favorited? %>
+        <span class="favorite-badge">★ favorited</span>
+      <% end %>
+    </div>
+    <% if event.description.present? %>
+      <div class="event-desc"><%= simple_markdown(event.description) %></div>
+    <% end %>
+  </div>
+  <span class="event-time"><%= relative_time(event.created_at) %></span>
+  <div class="event-actions" data-controller="event-actions" data-event-actions-id-value="<%= event.id %>">
+    <button type="button" data-action="event-actions#favorite" class="<%= 'is-favorited' if event.favorited? %>" aria-label="Toggle favorite">★</button>
+    <button type="button" data-action="event-actions#destroy" aria-label="Delete event">✕</button>
+  </div>
+</div>

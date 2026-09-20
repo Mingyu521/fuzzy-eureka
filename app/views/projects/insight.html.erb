@@ -1,0 +1,21 @@
+<% content_for :title, "#{@project.name} — Insights" %>
+
+<%= turbo_stream_from @project, "insights" %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title rainbow-text">Insights 💫</h1>
+    <p class="page-subtitle">KPI cards pushed from <%= @project.name %> · live updates</p>
+  </div>
+</div>
+
+<div id="insights-grid" class="kpi-grid">
+  <% if @insights.any? %>
+    <%= render partial: "insights/insight", collection: @insights, as: :insight %>
+  <% else %>
+    <p style="color: var(--ink-dimmer); font-size: 13px;">
+      No insights yet. Push one with <code>POST /api/insight</code> — see the
+      <%= link_to "playground", playground_project_path(@project) %> for a live example.
+    </p>
+  <% end %>
+</div>

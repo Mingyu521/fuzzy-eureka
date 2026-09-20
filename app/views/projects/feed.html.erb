@@ -1,0 +1,43 @@
+<% content_for :title, "#{@project.name} — Feed" %>
+
+<%= turbo_stream_from @project, "events" %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title rainbow-text">Event Feed ✨</h1>
+    <p class="page-subtitle">Live from <%= @project.name %> · reverse-chronological · updates in real time</p>
+  </div>
+</div>
+
+<%= form_with url: feed_project_path(@project), method: :get, data: { controller: "feed-filters" } do %>
+  <% if @selected_channel.present? %><%= hidden_field_tag :channel, @selected_channel %><% end %>
+  <% if @favorites_only %><%= hidden_field_tag :favorites, "1" %><% end %>
+
+  <div class="filter-bar">
+    <label class="sr-only" for="search">Search events</label>
+    <%= text_field_tag :search, @search, id: "search", placeholder: "🔍 search titles, descriptions, tags...", class: "search-input", autocomplete: "off",
+          data: { feed_filters_target: "input", action: "input->feed-filters#submitDebounced" } %>
+
+    <%= link_to "★ Favorites", feed_project_path(@project, request.query_parameters.merge(favorites: @favorites_only ? nil : "1", page: nil).compact),
+          class: "toggle-pill #{'active' if @favorites_only}" %>
+
+    <%= select_tag :per_page, options_for_select([ [ "50 / page", "50" ], [ "100 / page", "100" ], [ "Show all", "all" ] ], @per_page),
+          class: "select-pill", data: { action: "change->feed-filters#submitNow" } %>
+  </div>
+<% end %>
+
+<div id="events-feed" class="card" style="padding: 8px;">
+  <% if @events.any? %>
+    <%= render partial: "events/event", collection: @events, as: :event %>
+  <% else %>
+    <p style="text-align:center; color: var(--ink-dimmer); padding: 40px;">No events match your filters yet.</p>
+  <% end %>
+</div>
+
+<% if @per_page != "all" && @total_pages > 1 %>
+  <div class="pagination">
+    <% (1..@total_pages).each do |p| %>
+      <%= link_to p, feed_project_path(@project, request.query_parameters.merge(page: p)), class: (p == @page ? "current" : nil) %>
+    <% end %>
+  </div>
+<% end %>

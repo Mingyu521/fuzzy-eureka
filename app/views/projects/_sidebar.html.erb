@@ -1,0 +1,39 @@
+<nav class="sidebar" aria-label="Project navigation">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-row">
+      <span style="font-size: 24px;">🎷</span>
+      <span class="sidebar-logo-text rainbow-text"><%= project.name %></span>
+      <span style="font-size: 15px;">🦄</span>
+    </div>
+    <div class="rainbow-bar"></div>
+  </div>
+
+  <ul class="sidebar-nav">
+    <li><%= link_to "📡 Feed", feed_project_path(project), class: (action_name == "feed" ? "active" : nil) %></li>
+    <li><%= link_to "📈 Charts", charts_project_path(project), class: (action_name == "charts" ? "active" : nil) %></li>
+    <li><%= link_to "✨ Insights", insight_project_path(project), class: (action_name == "insight" ? "active" : nil) %></li>
+    <li><%= link_to "🧪 Playground", playground_project_path(project), class: (action_name == "playground" ? "active" : nil) %></li>
+    <li><%= link_to "⚙️ Settings", settings_project_path(project), class: (action_name == "settings" ? "active" : nil) %></li>
+  </ul>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="channel-list">
+    <span class="channel-list-label">Channels</span>
+
+    <% channel_counts = defined?(@channel_counts) && @channel_counts ? @channel_counts : project.events.group(:channel).count.sort.to_h %>
+    <% total = channel_counts.values.sum %>
+    <% selected = defined?(@selected_channel) ? @selected_channel : nil %>
+
+    <%= link_to feed_project_path(project), class: "channel-pill #{'active' unless selected.present?}" do %>
+      <span>All events</span><span style="opacity:0.6;"><%= total %></span>
+    <% end %>
+
+    <% channel_counts.each do |name, count| %>
+      <%= link_to feed_project_path(project, channel: name), class: "channel-pill #{'active' if selected == name}" do %>
+        <span><span class="channel-dot" style="background: <%= channel_color(name) %>; box-shadow: 0 0 6px <%= channel_color(name) %>;"></span><%= name %></span>
+        <span style="opacity:0.6;"><%= count %></span>
+      <% end %>
+    <% end %>
+  </div>
+</nav>

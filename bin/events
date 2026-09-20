@@ -1,0 +1,192 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "net/http"
+require "uri"
+require "json"
+require "optparse"
+
+BASE_URL = ENV.fetch("EVENTS_API_URL", "http://localhost:3000")
+
+def request(method, path, body: nil, api_key: nil)
+  uri = URI.join(BASE_URL, path)
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = uri.scheme == "https"
+
+  req = case method
+        when :post then Net::HTTP::Post.new(uri)
+        when :get then Net::HTTP::Get.new(uri)
+        end
+
+  req["Content-Type"] = "application/json"
+  req["Authorization"] = "Bearer #{api_key}" if api_key
+  req.body = body.to_json if body
+
+  response = http.request(req)
+  [ response.code.to_i, JSON.parse(response.body) ]
+rescue JSON::ParserError
+  [ response&.code.to_i || 0, { "error" => response&.body } ]
+end
+
+def cmd_init(args)
+  name = nil
+  OptionParser.new do |opts|
+    opts.banner = "Usage: events init --name \"Project Name\""
+    opts.on("--name NAME") { |v| name = v }
+  end.parse!(args)
+
+  abort "Missing --name" unless name
+
+  status, body = request(:post, "/api/projects", body: { name: name })
+  if status == 201
+    puts "Project created: #{body['name']} (#{body['id']})"
+    puts "API key: #{body['api_key']}"
+    puts "\nSave that key — you'll need it for `events push` and `events insight`."
+  else
+    abort "Failed (#{status}): #{body['error']}"
+  end
+end
+
+def cmd_push(args)
+  opts_hash = { tags: nil }
+  api_key = channel = title = description = icon = url = user_id = nil
+  notify = false
+
+  OptionParser.new do |opts|
+    opts.banner = "Usage: events push --api-key KEY --channel CHANNEL --title TITLE [options]"
+    opts.on("--api-key KEY") { |v| api_key = v }
+    opts.on("--channel CHANNEL") { |v| channel = v }
+    opts.on("--title TITLE") { |v| title = v }
+    opts.on("--description DESC") { |v| description = v }
+    opts.on("--icon ICON") { |v| icon = v }
+    opts.on("--tags JSON") { |v| opts_hash[:tags] = JSON.parse(v) }
+    opts.on("--url URL") { |v| url = v }
+    opts.on("--user-id ID") { |v| user_id = v }
+    opts.on("--notify") { notify = true }
+  end.parse!(args)
+
+  abort "Missing --api-key" unless api_key
+  abort "Missing --channel" unless channel
+  abort "Missing --title" unless title
+
+  body = { channel: channel, title: title, notify: notify }
+  body[:description] = description if description
+  body[:icon] = icon if icon
+  body[:tags] = opts_hash[:tags] if opts_hash[:tags]
+  body[:url] = url if url
+  body[:user_id] = user_id if user_id
+
+  status, response = request(:post, "/api/events", body: body, api_key: api_key)
+  if status == 201
+    puts "Event ##{response['id']} pushed to ##{channel}"
+  else
+    abort "Failed (#{status}): #{response['error']}"
+  end
+end
+
+def cmd_insight(args)
+  api_key = title = value = icon = nil
+
+  OptionParser.new do |opts|
+    opts.banner = "Usage: events insight --api-key KEY --title TITLE --value VALUE [--icon ICON]"
+    opts.on("--api-key KEY") { |v| api_key = v }
+    opts.on("--title TITLE") { |v| title = v }
+    opts.on("--value VALUE") { |v| value = v }
+    opts.on("--icon ICON") { |v| icon = v }
+  end.parse!(args)
+
+  abort "Missing --api-key" unless api_key
+  abort "Missing --title" unless title
+  abort "Missing --value" unless value
+
+  body = { title: title, value: value }
+  body[:icon] = icon if icon
+
+  status, response = request(:post, "/api/insight", body: body, api_key: api_key)
+  if status == 200
+    puts "Insight \"#{response['title']}\" = #{response['value']}"
+  else
+    abort "Failed (#{status}): #{response['error']}"
+  end
+end
+
+def cmd_export(args)
+  project = nil
+  file = "export.json"
+
+  OptionParser.new do |opts|
+    opts.banner = "Usage: events export --project PROJECT_ID --file output.json"
+    opts.on("--project ID") { |v| project = v }
+    opts.on("--file FILE") { |v| file = v }
+  end.parse!(args)
+
+  abort "Missing --project" unless project
+
+  all_events = []
+  cursor = nil
+  loop do
+    path = "/api/events?project=#{project}&limit=200"
+    path += "&cursor=#{cursor}" if cursor
+    status, body = request(:get, path)
+    abort "Failed (#{status}): #{body['error']}" unless status == 200
+    all_events.concat(body["events"])
+    cursor = body["nextCursor"]
+    break unless cursor
+  end
+
+  File.write(file, JSON.pretty_generate({ project: project, events: all_events }))
+  puts "Exported #{all_events.size} events to #{file}"
+end
+
+def cmd_load(args)
+  api_key = nil
+  file = nil
+
+  OptionParser.new do |opts|
+    opts.banner = "Usage: events load --api-key KEY --file data.json"
+    opts.on("--api-key KEY") { |v| api_key = v }
+    opts.on("--file FILE") { |v| file = v }
+  end.parse!(args)
+
+  abort "Missing --api-key" unless api_key
+  abort "Missing --file" unless file
+
+  data = JSON.parse(File.read(file))
+  events = data["events"] || data
+
+  events.each do |event|
+    body = event.slice("channel", "title", "description", "icon", "tags", "url", "user_id", "notify")
+    status, response = request(:post, "/api/events", body: body, api_key: api_key)
+    puts status == 201 ? "  ok: #{body['title']}" : "  FAILED: #{body['title']} (#{response['error']})"
+  end
+
+  (data["insights"] || []).each do |insight|
+    status, response = request(:post, "/api/insight", body: insight, api_key: api_key)
+    puts status == 200 ? "  insight ok: #{insight['title']}" : "  insight FAILED: #{insight['title']} (#{response['error']})"
+  end
+
+  puts "Loaded #{events.size} events from #{file}"
+end
+
+command = ARGV.shift
+
+case command
+when "init" then cmd_init(ARGV)
+when "push" then cmd_push(ARGV)
+when "insight" then cmd_insight(ARGV)
+when "export" then cmd_export(ARGV)
+when "load" then cmd_load(ARGV)
+else
+  puts <<~USAGE
+    Usage: events COMMAND [options]
+
+    Commands:
+      init --name "Project Name"
+      push --api-key KEY --channel CHANNEL --title TITLE [--description D] [--icon I] [--tags JSON] [--url U] [--user-id ID] [--notify]
+      insight --api-key KEY --title TITLE --value VALUE [--icon ICON]
+      export --project PROJECT_ID --file output.json
+      load --api-key KEY --file data.json
+
+    Set EVENTS_API_URL to point at a deployed server (default: http://localhost:3000)
+  USAGE
+end

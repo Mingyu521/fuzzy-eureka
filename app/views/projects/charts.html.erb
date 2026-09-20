@@ -1,0 +1,25 @@
+<% content_for :title, "#{@project.name} — Charts" %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title rainbow-text">Charts 📈</h1>
+    <p class="page-subtitle">Activity trends for <%= @project.name %></p>
+  </div>
+</div>
+
+<div data-controller="charts" data-charts-project-value="<%= @project.id %>">
+  <div class="card" style="margin-bottom: 20px;">
+    <h2 style="font-family: var(--font-display); font-size: 14px; color: var(--cyan); margin-top: 0;">Events per day — last 30 days</h2>
+    <canvas data-charts-target="daily" class="chart-canvas" height="90"></canvas>
+  </div>
+
+  <div class="card" style="margin-bottom: 20px;">
+    <h2 style="font-family: var(--font-display); font-size: 14px; color: var(--pink); margin-top: 0;">Distribution by channel</h2>
+    <div style="max-width: 360px; margin: 0 auto;">
+      <canvas data-charts-target="doughnut" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <h2 style="font-family: var(--font-display); font-size: 14px; color: var(--yellow); margin-bottom: 12px;">Per-channel activity</h2>
+  <div data-charts-target="perChannel"></div>
+</div>

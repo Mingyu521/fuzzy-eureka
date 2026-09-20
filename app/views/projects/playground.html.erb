@@ -1,0 +1,41 @@
+<% content_for :title, "#{@project.name} — Playground" %>
+
+<div class="page-header">
+  <div>
+    <h1 class="page-title rainbow-text">Playground 🧪</h1>
+    <p class="page-subtitle">Test <code>POST /api/events</code> right from the browser</p>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px;" data-controller="playground" data-playground-api-key-value="<%= @project.api_key %>">
+  <div class="card">
+    <div class="field">
+      <label for="pg_channel">Channel</label>
+      <input type="text" id="pg_channel" value="orders" data-playground-target="channel" data-action="input->playground#updatePreview">
+    </div>
+    <div class="field">
+      <label for="pg_title">Title</label>
+      <input type="text" id="pg_title" value="New Order" data-playground-target="title" data-action="input->playground#updatePreview">
+    </div>
+    <div class="field">
+      <label for="pg_description">Description</label>
+      <input type="text" id="pg_description" placeholder="Order #1234 placed by customer@example.com" data-playground-target="description" data-action="input->playground#updatePreview">
+    </div>
+    <div class="field">
+      <label for="pg_icon">Icon (emoji)</label>
+      <input type="text" id="pg_icon" value="🛒" data-playground-target="icon" data-action="input->playground#updatePreview">
+    </div>
+    <div class="field">
+      <label for="pg_tags">Tags (JSON)</label>
+      <textarea id="pg_tags" rows="3" placeholder='{"amount": "$49.99"}' data-playground-target="tags" data-action="input->playground#updatePreview"></textarea>
+    </div>
+    <button type="button" class="btn" data-action="playground#send">Send event</button>
+
+    <pre class="code-preview" data-playground-target="result" hidden style="margin-top: 16px;"></pre>
+  </div>
+
+  <div class="card">
+    <h2 style="font-family: var(--font-display); font-size: 13px; color: var(--cyan); margin-top: 0;">fetch() preview</h2>
+    <pre class="code-preview" data-playground-target="preview"></pre>
+  </div>
+</div>
