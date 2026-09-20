@@ -1,7 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
-import { Chart, registerables } from "chart.js"
 
-Chart.register(...registerables)
+// Chart.js loads as a plain global <script> (see the charts view) rather
+// than an import — its ESM build pulls in "@kurkle/color" as a bare
+// specifier that import maps can't resolve from a CDN.
+const Chart = window.Chart
 
 const PALETTE = ["#01fdf6", "#ff10f0", "#faed27", "#bc13fe", "#0aff9d", "#ff9f1c"]
 

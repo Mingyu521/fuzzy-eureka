@@ -2,6 +2,9 @@ source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
 gem "rails", "~> 8.1.3", ">= 8.1.3.1"
+# Pin below 3.0: the json 3.x JSON.parse signature isn't compatible yet with
+# this ActiveSupport release's JSON decoding (breaks jsonb default handling).
+gem "json", "~> 2.9"
 # The modern asset pipeline for Rails [https://github.com/rails/propshaft]
 gem "propshaft"
 # Use postgresql as the database for Active Record
