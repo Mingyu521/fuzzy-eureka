@@ -5,6 +5,8 @@ test:
   adapter: test
 
 production:
-  adapter: redis
-  url: <%= ENV.fetch("REDIS_URL") { "redis://localhost:6379/1" } %>
-  channel_prefix: events_dashboard_production
+  # A single Render instance (or any single-process deployment) doesn't need
+  # Redis for Action Cable pub/sub — async works the same way it does in
+  # development. Switch to redis (and add the redis gem) only if this ever
+  # runs as more than one process/dyno.
+  adapter: async
