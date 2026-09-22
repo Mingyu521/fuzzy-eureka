@@ -21,7 +21,7 @@
     <% end %>
   </div>
   <span class="event-time"><%= relative_time(event.created_at) %></span>
-  <div class="event-actions" data-controller="event-actions" data-event-actions-id-value="<%= event.id %>">
+  <div class="event-actions" data-controller="event-actions" data-event-actions-id-value="<%= event.id %>" data-event-actions-api-key-value="<%= event.project.api_key %>">
     <button type="button" data-action="event-actions#favorite" class="<%= 'is-favorited' if event.favorited? %>" aria-label="Toggle favorite">★</button>
     <button type="button" data-action="event-actions#destroy" aria-label="Delete event">✕</button>
   </div>

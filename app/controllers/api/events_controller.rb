@@ -1,6 +1,6 @@
 module Api
   class EventsController < BaseController
-    before_action :authenticate_project!, only: [ :create ]
+    before_action :authenticate_project!, only: [ :create, :favorite, :delete ]
 
     MAX_LIMIT = 200
 
@@ -33,13 +33,13 @@ module Api
     end
 
     def favorite
-      event = Event.find(params[:id])
+      event = current_project.events.find(params[:id])
       event.update!(favorited: !event.favorited)
       render json: { favorited: event.favorited }
     end
 
     def delete
-      event = Event.find(params[:id])
+      event = current_project.events.find(params[:id])
       event.destroy!
       render json: { ok: true }
     end
